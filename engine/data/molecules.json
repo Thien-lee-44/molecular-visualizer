@@ -1,0 +1,149 @@
+{
+  "H2O": {
+    "name": "Water (H2O)",
+    "atoms": [
+      {"id": "O1", "element": "O", "position": [0.0, 0.0, 0.0]},
+      {"id": "H1", "element": "H", "position": [-1.19, -0.92, 0.0]},
+      {"id": "H2", "element": "H", "position": [1.19, -0.92, 0.0]}
+    ],
+    "bonds": [
+      {"source": "O1", "target": "H1"},
+      {"source": "O1", "target": "H2"}
+    ],
+    "vibrations": {
+      "sym_stretch": {
+        "name": "Symmetric Stretch (v1 - 3657 cm⁻¹)",
+        "vectors": {"O1": [0.0, 0.08, 0.0], "H1": [-0.58, -0.44, 0.0], "H2": [0.58, -0.44, 0.0]}
+      },
+      "bend": {
+        "name": "Bending / Scissoring (v2 - 1595 cm⁻¹)",
+        "vectors": {"O1": [0.0, -0.06, 0.0], "H1": [0.4, 0.3, 0.0], "H2": [-0.4, 0.3, 0.0]}
+      },
+      "asym_stretch": {
+        "name": "Asymmetric Stretch (v3 - 3756 cm⁻¹)",
+        "vectors": {"O1": [-0.06, 0.0, 0.0], "H1": [0.58, 0.44, 0.0], "H2": [0.58, -0.44, 0.0]}
+      }
+    }
+  },
+  "CO2": {
+    "name": "Carbon Dioxide (CO2)",
+    "atoms": [
+      {"id": "C1", "element": "C", "position": [0.0, 0.0, 0.0]},
+      {"id": "O1", "element": "O", "position": [-1.5, 0.0, 0.0]},
+      {"id": "O2", "element": "O", "position": [1.5, 0.0, 0.0]}
+    ],
+    "bonds": [
+      {"source": "C1", "target": "O1"},
+      {"source": "C1", "target": "O2"}
+    ],
+    "vibrations": {
+      "sym_stretch": {
+        "name": "Symmetric Stretch (v1 - 1388 cm⁻¹)",
+        "vectors": {"C1": [0.0, 0.0, 0.0], "O1": [-0.5, 0.0, 0.0], "O2": [0.5, 0.0, 0.0]}
+      },
+      "bend": {
+        "name": "Bending Vibration (v2 - 667 cm⁻¹)",
+        "vectors": {"C1": [0.0, 0.5, 0.0], "O1": [0.0, -0.25, 0.0], "O2": [0.0, -0.25, 0.0]}
+      },
+      "asym_stretch": {
+        "name": "Asymmetric Stretch (v3 - 2349 cm⁻¹)",
+        "vectors": {"C1": [0.5, 0.0, 0.0], "O1": [-0.25, 0.0, 0.0], "O2": [-0.25, 0.0, 0.0]}
+      }
+    }
+  },
+  "CH4": {
+    "name": "Methane (CH4)",
+    "atoms": [
+      {"id": "C1", "element": "C", "position": [0.0, 0.0, 0.0]},
+      {"id": "H1", "element": "H", "position": [0.63, 0.63, 0.63]},
+      {"id": "H2", "element": "H", "position": [-0.63, -0.63, 0.63]},
+      {"id": "H3", "element": "H", "position": [0.63, -0.63, -0.63]},
+      {"id": "H4", "element": "H", "position": [-0.63, 0.63, -0.63]}
+    ],
+    "bonds": [
+      {"source": "C1", "target": "H1"},
+      {"source": "C1", "target": "H2"},
+      {"source": "C1", "target": "H3"},
+      {"source": "C1", "target": "H4"}
+    ],
+    "vibrations": {
+      "sym_stretch": {
+        "name": "Symmetric Stretch (v1 - 2917 cm⁻¹)",
+        "vectors": {
+          "C1": [0.0, 0.0, 0.0],
+          "H1": [0.2, 0.2, 0.2],
+          "H2": [-0.2, -0.2, 0.2],
+          "H3": [0.2, -0.2, -0.2],
+          "H4": [-0.2, 0.2, -0.2]
+        }
+      }
+    }
+  },
+  "NH3": {
+    "name": "Ammonia (NH3)",
+    "atoms": [
+      {"id": "N1", "element": "N", "position": [0.0, 0.0, 0.2]},
+      {"id": "H1", "element": "H", "position": [0.0, 0.94, -0.2]},
+      {"id": "H2", "element": "H", "position": [0.81, -0.47, -0.2]},
+      {"id": "H3", "element": "H", "position": [-0.81, -0.47, -0.2]}
+    ],
+    "bonds": [
+      {"source": "N1", "target": "H1"},
+      {"source": "N1", "target": "H2"},
+      {"source": "N1", "target": "H3"}
+    ],
+    "vibrations": {
+      "umbrella": {
+        "name": "Umbrella Vibration (v2 - 950 cm⁻¹)",
+        "vectors": {
+          "N1": [0.0, 0.0, -0.15],
+          "H1": [0.0, 0.0, 0.2],
+          "H2": [0.0, 0.0, 0.2],
+          "H3": [0.0, 0.0, 0.2]
+        }
+      }
+    }
+  },
+  "CH2O": {
+    "name": "Formaldehyde (CH2O)",
+    "atoms": [
+      {"id": "C1", "element": "C", "position": [0.0, 0.0, 0.0]},
+      {"id": "O1", "element": "O", "position": [0.0, 1.2, 0.0]},
+      {"id": "H1", "element": "H", "position": [0.93, -0.6, 0.0]},
+      {"id": "H2", "element": "H", "position": [-0.93, -0.6, 0.0]}
+    ],
+    "bonds": [
+      {"source": "C1", "target": "O1"},
+      {"source": "C1", "target": "H1"},
+      {"source": "C1", "target": "H2"}
+    ],
+    "vibrations": {
+      "co_stretch": {
+        "name": "C=O Stretch (1746 cm⁻¹)",
+        "vectors": {
+          "C1": [0.0, -0.2, 0.0],
+          "O1": [0.0, 0.2, 0.0]
+        }
+      }
+    }
+  },
+  "O2": {
+    "name": "Oxygen Gas (O2)",
+    "atoms": [
+      {"id": "O1", "element": "O", "position": [0.0, 0.0, -0.6]},
+      {"id": "O2", "element": "O", "position": [0.0, 0.0, 0.6]}
+    ],
+    "bonds": [
+      {"source": "O1", "target": "O2"}
+    ],
+    "vibrations": {
+      "stretch": {
+        "name": "Stretch Vibration (1580 cm⁻¹)",
+        "vectors": {
+          "O1": [0.0, 0.0, -0.3],
+          "O2": [0.0, 0.0, 0.3]
+        }
+      }
+    }
+  }
+}

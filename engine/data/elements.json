@@ -1,0 +1,30 @@
+{
+  "symbols": [
+    "H", "He", "Li", "Be", "B", "C", "N", "O", "F", "Ne", "Na", "Mg", "Al", "Si", "P", "S", "Cl", "Ar", "K", "Ca", "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ga", "Ge", "As", "Se", "Br", "Kr", "Rb", "Sr", "Y", "Zr", "Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd", "In", "Sn", "Sb", "Te", "I", "Xe", "Cs", "Ba", "La", "Ce", "Pr", "Nd", "Pm", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho", "Er", "Tm", "Yb", "Lu", "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg", "Tl", "Pb", "Bi", "Po", "At", "Rn", "Fr", "Ra", "Ac", "Th", "Pa", "U", "Np", "Pu", "Am", "Cm", "Bk", "Cf", "Es", "Fm", "Md", "No", "Lr", "Rf", "Db", "Sg", "Bh", "Hs", "Mt", "Ds", "Rg", "Cn", "Nh", "Fl", "Mc", "Lv", "Ts", "Og"
+  ],
+  "electron_exceptions": {
+    "24": [2, 8, 13, 1],
+    "29": [2, 8, 18, 1],
+    "41": [2, 8, 18, 12, 1],
+    "42": [2, 8, 18, 13, 1],
+    "44": [2, 8, 18, 15, 1],
+    "45": [2, 8, 18, 16, 1],
+    "46": [2, 8, 18, 18],
+    "47": [2, 8, 18, 18, 1],
+    "78": [2, 8, 18, 32, 17, 1],
+    "79": [2, 8, 18, 32, 18, 1]
+  },
+  "properties": {
+    "H":  {"color": [0.9, 0.9, 0.9], "radius_ball": 0.15, "radius_vdw": 1.1},
+    "He": {"color": [1.0, 0.75, 0.8], "radius_ball": 0.15, "radius_vdw": 1.4},
+    "Li": {"color": [0.7, 0.5, 1.0], "radius_ball": 0.25, "radius_vdw": 1.8},
+    "C":  {"color": [0.3, 0.3, 0.3], "radius_ball": 0.25, "radius_vdw": 1.7},
+    "N":  {"color": [0.0, 0.0, 1.0], "radius_ball": 0.25, "radius_vdw": 1.55},
+    "O":  {"color": [1.0, 0.0, 0.0], "radius_ball": 0.20, "radius_vdw": 1.52},
+    "F":  {"color": [0.0, 1.0, 0.0], "radius_ball": 0.25, "radius_vdw": 1.47},
+    "Na": {"color": [0.0, 1.0, 0.0], "radius_ball": 0.30, "radius_vdw": 2.2},
+    "P":  {"color": [1.0, 0.5, 0.0], "radius_ball": 0.30, "radius_vdw": 1.8},
+    "S":  {"color": [1.0, 1.0, 0.0], "radius_ball": 0.30, "radius_vdw": 1.8},
+    "Cl": {"color": [0.1, 0.8, 0.1], "radius_ball": 0.30, "radius_vdw": 1.75}
+  }
+}
