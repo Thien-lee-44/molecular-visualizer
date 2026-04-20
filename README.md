@@ -55,7 +55,7 @@ pip install -r requirements.txt
 ```
 **3. Launch the Visualizer:**
 ```bash
-python main.py
+python run.py
 ```
 ## User Guide & Controls
 
@@ -79,30 +79,36 @@ python main.py
 ```text
 molecular_visualizer/
 │
-├── main.py                     # Application entry point & Qt Bootstrap
+├── run.py                      # Standardized application entry point
+├── main.py                     # Backward-compatible entry wrapper
 │
 ├── assets/                     # Raw physical assets & Resources
 │   ├── models/                 # Base OBJ primitives (sphere, cylinder)
 │   └── shaders/                # GLSL vertex and fragment shaders
 │
-├── engine/                     # ================= CORE RUNTIME ENGINE =================
-│   ├── api.py                  # Dynamic Facade decoupling the UI from the Engine
-│   ├── data/                   # Chemical Logic & Database
-│   │   ├── chemical_data.py    # Mesh wrappers for Atoms, Bonds, and Orbits
-│   │   ├── periodic_table.py   # Aufbau principle logic and CPK color mapping
-│   │   ├── molecule_factory.py # JSON parser and dynamic hierarchy builder
-│   │   └── molecules.json      # Extensible database of molecular structures & vibrations
+├── src/
+│   ├── app/                    # Bootstrap and shared runtime configuration
+│   │   ├── main.py             # Qt/OpenGL startup flow
+│   │   └── config.py           # Centralized constants and paths
 │   │
-│   └── graphics/               # Low-level Rendering & Math
-│       ├── camera.py           # Orbital View/Projection matrix math
-│       ├── model_loader.py     # Numpy-based OBJ parser and C-type buffer caching
-│       ├── scene_graph.py      # Transform nodes and Matrix propagation
-│       ├── shader.py           # GLSL Compilation and Uniform injection
-│       └── renderer.py         # OpenGL State Machine and Draw calls
-│
-└── interface/                  # ================= PYSIDE6 AUTHORING GUI =================
-    ├── main_window.py          # Main Window assembly and Control Panel routing
-    └── gl_widget.py            # 3D OpenGL Canvas and Input Controllers
+│   ├── engine/                 # ================= CORE RUNTIME ENGINE =================
+│   │   ├── api.py              # Dynamic Facade decoupling the UI from the Engine
+│   │   ├── data/               # Chemical Logic & Database
+│   │   │   ├── chemical_data.py    # Mesh wrappers for Atoms, Bonds, and Orbits
+│   │   │   ├── periodic_table.py   # Aufbau principle logic and CPK color mapping
+│   │   │   ├── molecule_factory.py # JSON parser and dynamic hierarchy builder
+│   │   │   └── molecules.json      # Extensible database of molecular structures & vibrations
+│   │   │
+│   │   └── graphics/           # Low-level Rendering & Math
+│   │       ├── camera.py       # Orbital View/Projection matrix math
+│   │       ├── model_loader.py # Numpy-based OBJ parser and C-type buffer caching
+│   │       ├── scene_graph.py  # Transform nodes and Matrix propagation
+│   │       ├── shader.py       # GLSL Compilation and Uniform injection
+│   │       └── renderer.py     # OpenGL State Machine and Draw calls
+│   │
+│   └── ui/                     # ================= PYSIDE6 AUTHORING GUI =================
+│       ├── main_window.py      # Main Window assembly and Control Panel routing
+│       └── gl_widget.py        # 3D OpenGL Canvas and Input Controllers
 ```
 ## Contributing
 Contributions, issues, and feature requests are welcome. Feel free to check the issues page to get involved.

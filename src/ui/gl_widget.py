@@ -2,8 +2,10 @@ from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from PySide6.QtCore import QTimer, Qt
 from PySide6.QtGui import QPainter, QColor, QFont
 from OpenGL.GL import glViewport
+import time
 
-from engine.api import EngineAPI
+from src.engine.api import EngineAPI
+from src.app import config
 
 
 class GLDisplayWidget(QOpenGLWidget):
@@ -19,8 +21,9 @@ class GLDisplayWidget(QOpenGLWidget):
         self.engine = EngineAPI()
         self.last_mouse_pos = None
         self.is_animating = True
-        self.anim_speed = 5.0
+        self.anim_speed = config.DEFAULT_ANIMATION_SPEED
         self.is_gl_ready = False 
+        self._last_update_time = None
         
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_scene)
@@ -29,9 +32,10 @@ class GLDisplayWidget(QOpenGLWidget):
         """Initializes the OpenGL context and starts the render loop."""
         self.engine.init_gl()
         self.is_gl_ready = True
-        self.load_model("Bohr: H (Z=1)")
+        self.load_model(config.DEFAULT_INITIAL_MODEL)
+        self._last_update_time = time.perf_counter()
         if not self.timer.isActive():
-            self.timer.start(16)
+            self.timer.start(config.TIMER_INTERVAL_MS)
 
     def load_model(self, model_name):
         """
@@ -43,7 +47,6 @@ class GLDisplayWidget(QOpenGLWidget):
         self.makeCurrent() 
         self.engine.load_model(model_name)
         
-        # Ensure transforms are calculated immediately for the first frame
         self.engine.update(delta_time=0)
         
         self.doneCurrent()
@@ -62,7 +65,6 @@ class GLDisplayWidget(QOpenGLWidget):
         """Executes the OpenGL rendering pipeline and draws 2D UI overlays."""
         self.engine.render()
 
-        # Render 2D atomic symbols overlay
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
         painter.setFont(QFont("Arial", 12, QFont.Bold))
@@ -76,7 +78,17 @@ class GLDisplayWidget(QOpenGLWidget):
 
     def update_scene(self):
         """Advances the simulation state based on elapsed time and speed multiplier."""
-        self.engine.update(delta_time=0.016 * self.anim_speed)
+        now = time.perf_counter()
+        if self._last_update_time is None:
+            self._last_update_time = now
+        raw_dt = now - self._last_update_time
+        self._last_update_time = now
+
+        if raw_dt <= 0.0:
+            raw_dt = config.FRAME_TIME_SECONDS
+        delta_time = min(raw_dt, config.MAX_FRAME_TIME_SECONDS) * self.anim_speed
+
+        self.engine.update(delta_time=delta_time)
         self.update()
 
     def mousePressEvent(self, event):
@@ -103,9 +115,11 @@ class GLDisplayWidget(QOpenGLWidget):
         """Pauses or resumes the animation loop."""
         self.is_animating = enabled 
         if enabled:
+            self._last_update_time = time.perf_counter()
             if not self.timer.isActive(): 
-                self.timer.start(16)
+                self.timer.start(config.TIMER_INTERVAL_MS)
         else:
+            self._last_update_time = None
             if self.timer.isActive(): 
                 self.timer.stop()
             

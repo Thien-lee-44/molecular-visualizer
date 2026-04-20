@@ -8,11 +8,12 @@ and the backend OpenGL 3D engine, handling lifecycle and state management.
 import math
 import glm
 
-from engine.graphics.camera import Camera
-from engine.data.molecule_factory import MoleculeFactory
-from engine.data.chemical_data import SceneBuilder
-from engine.graphics.renderer import Renderer
-from engine.data.periodic_table import SYMBOLS
+from src.engine.graphics.camera import Camera
+from src.engine.data.molecule_factory import MoleculeFactory
+from src.engine.data.chemical_data import SceneBuilder
+from src.engine.graphics.renderer import Renderer
+from src.engine.data.periodic_table import SYMBOLS
+from src.app import config
 
 class EngineAPI:
     """
@@ -20,7 +21,10 @@ class EngineAPI:
     """
     
     def __init__(self):
-        self.camera = Camera(position=(0.0, 0.0, 8.0), target=(0.0, 0.0, 0.0))
+        self.camera = Camera(
+            position=config.DEFAULT_CAMERA_POSITION,
+            target=config.DEFAULT_CAMERA_TARGET,
+        )
         self.scene_root = None
         self.renderer = None
         self.current_molecule_mode = "ball_and_stick"
@@ -67,11 +71,10 @@ class EngineAPI:
                     mode=self.current_molecule_mode
                 )
                 self.last_molecule_key = model_name 
-            except Exception as e:
-                print(f"Error loading model JSON: {e}")
+            except (FileNotFoundError, KeyError, ValueError, TypeError) as err:
+                print(f"Error loading model JSON: {err}")
                 self.scene_root = None
 
-        # Force matrix calculation for the initial frame to prevent visual artifacts
         if self.scene_root:
             self.scene_root.update(delta_time=0.0)
 
@@ -85,7 +88,7 @@ class EngineAPI:
         if self.renderer and self.scene_root:
             self.renderer.render(self.scene_root, self.camera)
 
-    def handle_mouse_drag(self, dx, dy, sensitivity=0.01):
+    def handle_mouse_drag(self, dx, dy, sensitivity=config.CAMERA_ORBIT_SENSITIVITY):
         """Calculates orbital camera rotation based on mouse delta."""
         direction = self.camera.position - self.camera.target
         radius = glm.length(direction)
@@ -96,21 +99,24 @@ class EngineAPI:
         theta -= dx * sensitivity
         phi += dy * sensitivity
         
-        # Clamp polar angle to prevent camera flipping at the poles
-        phi = max(-math.pi/2 + 0.1, min(math.pi/2 - 0.1, phi))
+        clamp_margin = config.CAMERA_POLAR_CLAMP_MARGIN
+        phi = max(-math.pi / 2 + clamp_margin, min(math.pi / 2 - clamp_margin, phi))
         
         self.camera.position.x = self.camera.target.x + radius * math.cos(phi) * math.sin(theta)
         self.camera.position.y = self.camera.target.y + radius * math.sin(phi)
         self.camera.position.z = self.camera.target.z + radius * math.cos(phi) * math.cos(theta)
 
-    def handle_scroll(self, scroll_amount, sensitivity=1.5):
+    def handle_scroll(self, scroll_amount, sensitivity=config.CAMERA_SCROLL_SENSITIVITY):
         """Adjusts the camera zoom distance based on scroll wheel input."""
         direction = self.camera.position - self.camera.target
         distance = glm.length(direction)
         
         if distance > 0:
             dir_norm = glm.normalize(direction)
-            new_distance = max(1.5, min(distance - scroll_amount * sensitivity, 50.0))
+            new_distance = max(
+                config.CAMERA_MIN_DISTANCE,
+                min(distance - scroll_amount * sensitivity, config.CAMERA_MAX_DISTANCE),
+            )
             self.camera.position = self.camera.target + dir_norm * new_distance
 
     def set_molecule_display_mode(self, mode):
@@ -154,7 +160,6 @@ class EngineAPI:
                 world_pos = node.world_matrix * glm.vec4(0.0, 0.0, 0.0, 1.0)
                 clip_pos = vp_mat * world_pos
                 
-                # Check if the node is in front of the camera
                 if clip_pos.w > 0: 
                     ndc_x = clip_pos.x / clip_pos.w
                     ndc_y = clip_pos.y / clip_pos.w

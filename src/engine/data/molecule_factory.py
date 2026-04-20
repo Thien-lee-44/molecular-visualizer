@@ -2,9 +2,10 @@ import json
 import math
 import os
 import glm  
-from engine.graphics.scene_graph import Transform
-from engine.data.chemical_data import Atom, Bond
-from engine.data.periodic_table import get_chemical_properties
+from src.engine.graphics.scene_graph import Transform
+from src.engine.data.chemical_data import Atom, Bond
+from src.engine.data.periodic_table import get_chemical_properties
+from src.app import config
 
 class DynamicMolecule(Transform):
     """
@@ -14,42 +15,70 @@ class DynamicMolecule(Transform):
     def __init__(self, name):
         super().__init__(name)
         self.time_elapsed = 0.0
-        self.atoms = {}       # Format: { atom_id: (AtomNode, base_pos_glm) }
-        self.bonds = []       # Format: [ (BondNode, source_id, target_id) ]
+        self.idle_yaw = 0.0
+        self.atoms = {}
+        self.bonds = []
         self.vibrations = {}  
-        self.current_vib = None 
+        self.current_vib = None
+        self._rotation_quat = glm.quat(1.0, 0.0, 0.0, 0.0)
+        self._target_rotation_quat = glm.quat(1.0, 0.0, 0.0, 0.0)
+
+    @staticmethod
+    def _exp_blend_factor(delta_time, blend_rate):
+        """Convert delta time into a frame-rate independent smoothing factor."""
+        if delta_time <= 0.0:
+            return 0.0
+        return 1.0 - math.exp(-blend_rate * delta_time)
+
+    def _apply_root_rotation(self):
+        """Build the root local matrix from a quaternion to avoid Euler artifacts."""
+        t_mat = glm.translate(glm.mat4(1.0), self.position)
+        r_mat = glm.mat4_cast(self._rotation_quat)
+        s_mat = glm.scale(glm.mat4(1.0), self.scale_vec)
+        self.local_matrix = t_mat * r_mat * s_mat
 
     def set_vibration(self, vib_key):
-        """Activates a specific IR vibration mode and halts idle rotation."""
+        """Activate a vibration mode and let orientation transition smoothly."""
         self.current_vib = vib_key
         self.time_elapsed = 0.0 
-        if vib_key: 
-            self.set_rotation(0.0, 0.0, 0.0)
         self.update(0.0)
 
     def update(self, delta_time=0.0):
         """Advances the simulation state and recalculates dynamic bonds."""
         if delta_time > 0: 
             self.time_elapsed += delta_time
-            
-        if self.current_vib is None:
-            # Idle state: Slow continuous rotation around the Y-axis
-            self.set_rotation(0.0, self.time_elapsed * 0.5, 0.0)
-            for atom_id, (node, base_pos) in self.atoms.items():
-                node.set_position(base_pos.x, base_pos.y, base_pos.z)
-        else:
-            # IR Vibration state: Calculate sinusoidal displacements
-            vib_data = self.vibrations.get(self.current_vib)
-            for atom_id, (node, base_pos) in self.atoms.items():
-                offset = glm.vec3(0.0)
-                if vib_data and atom_id in vib_data["vectors"]:
-                    v = vib_data["vectors"][atom_id]
-                    offset = glm.vec3(v[0], v[1], v[2]) * (math.sin(self.time_elapsed * 30.0) * 0.2)
-                
-                new_pos = base_pos + offset
-                node.set_position(new_pos.x, new_pos.y, new_pos.z)
 
-        # Dynamic bond recalculation tracking moved atoms
+        if self.current_vib is None:
+            self.idle_yaw += delta_time * config.IDLE_ROTATION_SPEED
+            self.idle_yaw = math.fmod(self.idle_yaw, 2.0 * math.pi)
+            self._target_rotation_quat = glm.angleAxis(self.idle_yaw, glm.vec3(0.0, 1.0, 0.0))
+        else:
+            self._target_rotation_quat = glm.quat(1.0, 0.0, 0.0, 0.0)
+
+        rot_alpha = self._exp_blend_factor(delta_time, config.ROOT_ROTATION_BLEND_RATE)
+        if rot_alpha > 0.0:
+            self._rotation_quat = glm.normalize(
+                glm.slerp(self._rotation_quat, self._target_rotation_quat, rot_alpha)
+            )
+        self._apply_root_rotation()
+
+        vib_data = self.vibrations.get(self.current_vib)
+        oscillation = math.sin(self.time_elapsed * config.VIBRATION_ANGULAR_SPEED)
+        pos_alpha = self._exp_blend_factor(delta_time, config.ATOM_POSITION_BLEND_RATE)
+
+        for atom_id, (node, base_pos) in self.atoms.items():
+            target_pos = base_pos
+            if vib_data and atom_id in vib_data["vectors"]:
+                v = vib_data["vectors"][atom_id]
+                offset = glm.vec3(v[0], v[1], v[2]) * (oscillation * config.VIBRATION_AMPLITUDE)
+                target_pos = base_pos + offset
+
+            if pos_alpha > 0.0:
+                blended_pos = glm.mix(node.position, target_pos, pos_alpha)
+            else:
+                blended_pos = target_pos
+            node.set_position(blended_pos.x, blended_pos.y, blended_pos.z)
+
         for bond_node, src_id, tgt_id in self.bonds:
             p1 = self.atoms[src_id][0].position
             p2 = self.atoms[tgt_id][0].position
@@ -68,9 +97,7 @@ class DynamicMolecule(Transform):
 
 class MoleculeFactory:
     """Factory utility to instantiate molecular scene graphs from JSON databases."""
-
-    # Global scaling factor to condense atom spacing for better visual framing
-    DISTANCE_SCALE = 0.85 
+    DISTANCE_SCALE = config.MOLECULE_DISTANCE_SCALE
     
     @staticmethod
     def get_available_molecules():
@@ -80,7 +107,7 @@ class MoleculeFactory:
             with open(path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
             return [(key, val.get("name", key)) for key, val in data.items()]
-        except Exception: 
+        except (FileNotFoundError, json.JSONDecodeError, TypeError, ValueError): 
             return []
     
     @staticmethod
@@ -95,7 +122,6 @@ class MoleculeFactory:
         
         atom_positions = {}
         
-        # 1. Generate Atoms
         for atom_data in data["atoms"]:
             pos = atom_data["position"]
             scaled_pos = glm.vec3(pos[0], pos[1], pos[2]) * MoleculeFactory.DISTANCE_SCALE
@@ -110,7 +136,6 @@ class MoleculeFactory:
             atom_positions[atom_data["id"]] = scaled_pos
             root_node.atoms[atom_data["id"]] = (atom_node, scaled_pos)
             
-        # 2. Generate Bonds (if applicable)
         if mode == "ball_and_stick" and "bonds" in data:
             for bond_data in data["bonds"]:
                 p1 = atom_positions[bond_data["source"]]
@@ -120,7 +145,7 @@ class MoleculeFactory:
                 if length == 0: 
                     continue
                 
-                bond_radius = 0.06
+                bond_radius = config.BOND_RADIUS
                 bond_node = Bond(f"B_{bond_data['source']}_{bond_data['target']}", radius=bond_radius)
                 
                 bond_node.local_matrix = MoleculeFactory._calculate_bond_matrix(
@@ -136,28 +161,22 @@ class MoleculeFactory:
         return root_node
 
     @staticmethod
-    def _calculate_bond_matrix(center, direction, length, radius=0.06):
+    def _calculate_bond_matrix(center, direction, length, radius=config.BOND_RADIUS):
         """Calculates the transformation matrix to align a Z-oriented cylinder between two atoms."""
         center_vec = glm.vec3(*center)
         z_axis = glm.normalize(glm.vec3(*direction))
 
-        # Select orthogonal 'up' vector to avoid singularities
         up = glm.vec3(0.0, 1.0, 0.0) if abs(z_axis.y) < 0.9 else glm.vec3(1.0, 0.0, 0.0)
 
-        # Construct orthonormal basis
         x_axis = glm.normalize(glm.cross(up, z_axis))
         y_axis = glm.normalize(glm.cross(z_axis, x_axis))
 
-        # Build Column-Major Rotation Matrix mapping local Z to the direction vector
         R = glm.mat4(
             glm.vec4(x_axis, 0.0),
             glm.vec4(y_axis, 0.0),
             glm.vec4(z_axis, 0.0),
             glm.vec4(0.0, 0.0, 0.0, 1.0)
         )
-        # Scale: radius on X/Y, full length on Z
         S = glm.scale(glm.mat4(1.0), glm.vec3(radius, radius, length))
-        # Translation
         T = glm.translate(glm.mat4(1.0), center_vec)
-        # Apply transformations: Scale first, then Rotate, then Translate
         return T * R * S

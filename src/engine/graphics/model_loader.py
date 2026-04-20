@@ -1,6 +1,6 @@
-import os
 import numpy as np
 import math
+from src.app import config
 
 class ModelLoader:
     """Utility class to load and cache 3D geometry data."""
@@ -15,10 +15,9 @@ class ModelLoader:
         if model_name in ModelLoader._cache:
             return ModelLoader._cache[model_name]
 
-        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        filepath = os.path.join(base_dir, 'assets', 'models', f"{model_name}.obj")
+        filepath = config.MODELS_DIR / f"{model_name}.obj"
         
-        if not os.path.exists(filepath):
+        if not filepath.exists():
             raise FileNotFoundError(f"Model not found: {filepath}")
         
         raw_vertices = []
@@ -28,7 +27,7 @@ class ModelLoader:
         indices = []
         current_index = 0
 
-        with open(filepath, 'r') as f:
+        with filepath.open("r", encoding="utf-8") as f:
             for line in f:
                 parts = line.split()
                 if not parts: 

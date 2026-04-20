@@ -4,8 +4,9 @@ from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                                QSpinBox, QTabWidget, QMessageBox, QSlider)
 from PySide6.QtCore import Qt
 
-from interface.gl_widget import GLDisplayWidget
-from engine.api import EngineAPI 
+from src.ui.gl_widget import GLDisplayWidget
+from src.engine.api import EngineAPI 
+from src.app import config
 
 
 class MainWindow(QMainWindow):
@@ -15,8 +16,8 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Interactive Atomic & Molecular Visualizer")
-        self.resize(1280, 800)
+        self.setWindowTitle(config.APP_TITLE)
+        self.resize(*config.DEFAULT_WINDOW_SIZE)
 
         main_splitter = QSplitter(Qt.Horizontal)
         self.setCentralWidget(main_splitter)
@@ -49,7 +50,7 @@ class MainWindow(QMainWindow):
         self._setup_animation_panel(control_layout)
 
         main_splitter.addWidget(control_panel_widget)
-        main_splitter.setSizes([900, 380])
+        main_splitter.setSizes(list(config.MAIN_SPLITTER_SIZES))
 
     def _setup_molecule_tab(self):
         """Constructs the UI elements for the Molecular Models tab."""
@@ -130,10 +131,10 @@ class MainWindow(QMainWindow):
         anim_v_layout.addWidget(self.chk_animation)
 
         speed_layout = QHBoxLayout()
-        self.lbl_speed = QLabel("Speed: 5.0x")
+        self.lbl_speed = QLabel(f"Speed: {config.DEFAULT_ANIMATION_SPEED:.1f}x")
         self.sld_speed = QSlider(Qt.Horizontal)
         self.sld_speed.setRange(1, 100)
-        self.sld_speed.setValue(50)
+        self.sld_speed.setValue(int(config.DEFAULT_ANIMATION_SPEED * 10))
         self.sld_speed.valueChanged.connect(self.on_speed_changed)
         speed_layout.addWidget(self.lbl_speed)
         speed_layout.addWidget(self.sld_speed)

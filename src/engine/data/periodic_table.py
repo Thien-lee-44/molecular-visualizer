@@ -2,6 +2,7 @@ import colorsys
 import json
 import os
 import glm
+from src.app import config
 
 BASE_DIR = os.path.dirname(__file__)
 JSON_PATH = os.path.join(BASE_DIR, "elements.json")
@@ -9,7 +10,7 @@ JSON_PATH = os.path.join(BASE_DIR, "elements.json")
 try:
     with open(JSON_PATH, 'r', encoding='utf-8') as f:
         ELEMENTS_DB = json.load(f)
-except Exception:
+except (FileNotFoundError, json.JSONDecodeError):
     ELEMENTS_DB = {"symbols": [], "electron_exceptions": {}, "properties": {}}
 
 SYMBOLS = ELEMENTS_DB.get("symbols", [])
@@ -74,13 +75,13 @@ def get_chemical_properties(symbol):
         c = prop.get("color", [1.0, 1.0, 1.0])
         return {
             "color": glm.vec3(c[0], c[1], c[2]),
-            "radius_ball": prop.get("radius_ball", 0.25),
-            "radius_vdw": prop.get("radius_vdw", 1.5)
+            "radius_ball": prop.get("radius_ball", config.FALLBACK_RADIUS_BALL),
+            "radius_vdw": prop.get("radius_vdw", config.FALLBACK_RADIUS_VDW)
         }
         
     Z = SYMBOLS.index(symbol) + 1 if symbol in SYMBOLS else 1
     return {
         "color": get_element_color(Z),
-        "radius_ball": 0.25,
-        "radius_vdw": 1.5
+        "radius_ball": config.FALLBACK_RADIUS_BALL,
+        "radius_vdw": config.FALLBACK_RADIUS_VDW
     }

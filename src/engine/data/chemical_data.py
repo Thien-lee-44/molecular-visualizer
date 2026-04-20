@@ -1,9 +1,9 @@
 import math
 import glm
-from engine.graphics.scene_graph import Transform, Mesh
+from src.engine.graphics.scene_graph import Transform, Mesh
 from OpenGL.GL import GL_LINE_LOOP
-from engine.graphics.model_loader import ModelLoader 
-from engine.data.periodic_table import get_element_data
+from src.engine.graphics.model_loader import ModelLoader 
+from src.engine.data.periodic_table import get_element_data
 
 class Atom(Mesh):
     """Geometry node representing a spherical atom."""
