@@ -1,11 +1,20 @@
-from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
-                               QPushButton, QLabel, QComboBox, QCheckBox, QFrame, 
-                               QLineEdit, QRadioButton, QGroupBox, QSplitter, 
-                               QSpinBox, QTabWidget, QMessageBox, QSlider)
+"""
+Main window module.
+Assembles the graphical user interface, control panels, and widget layouts.
+"""
+
+from typing import Optional
+
+from PySide6.QtWidgets import (
+    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
+    QPushButton, QLabel, QComboBox, QCheckBox, QFrame, 
+    QLineEdit, QRadioButton, QGroupBox, QSplitter, 
+    QSpinBox, QTabWidget, QMessageBox, QSlider
+)
 from PySide6.QtCore import Qt
 
 from src.ui.gl_widget import GLDisplayWidget
-from src.engine.api import EngineAPI 
+from src.engine.engine import EngineAPI 
 from src.app import config
 
 
@@ -14,27 +23,31 @@ class MainWindow(QMainWindow):
     The main application window containing the 3D viewport and control panels.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle(config.APP_TITLE)
         self.resize(*config.DEFAULT_WINDOW_SIZE)
 
-        main_splitter = QSplitter(Qt.Horizontal)
+        # Setup main layout splitter (Viewport | Controls)
+        main_splitter = QSplitter(Qt.Orientation.Horizontal)
         self.setCentralWidget(main_splitter)
 
+        # Initialize 3D Viewport
         self.gl_widget = GLDisplayWidget(self)
         main_splitter.addWidget(self.gl_widget)
 
+        # Initialize Control Panel Base
         control_panel_widget = QWidget()
         control_layout = QVBoxLayout(control_panel_widget)
         control_layout.setContentsMargins(15, 15, 15, 15)
         control_layout.setSpacing(10)
 
         lbl_title = QLabel("CONTROL PANEL")
-        lbl_title.setAlignment(Qt.AlignCenter)
+        lbl_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         lbl_title.setStyleSheet("font-weight: bold; font-size: 14px;")
         control_layout.addWidget(lbl_title)
         
+        # Setup Tabs
         self.tabs = QTabWidget()
         self._setup_molecule_tab()
         self._setup_bohr_tab()
@@ -44,15 +57,17 @@ class MainWindow(QMainWindow):
         control_layout.addWidget(self.tabs)
 
         line_bottom = QFrame()
-        line_bottom.setFrameShape(QFrame.HLine)
+        line_bottom.setFrameShape(QFrame.Shape.HLine)
         control_layout.addWidget(line_bottom)
         
+        # Setup Animation Panel
         self._setup_animation_panel(control_layout)
 
+        # Finalize Splitter setup
         main_splitter.addWidget(control_panel_widget)
         main_splitter.setSizes(list(config.MAIN_SPLITTER_SIZES))
 
-    def _setup_molecule_tab(self):
+    def _setup_molecule_tab(self) -> None:
         """Constructs the UI elements for the Molecular Models tab."""
         self.tab_molecule = QWidget()
         layout_mol = QVBoxLayout(self.tab_molecule)
@@ -70,8 +85,10 @@ class MainWindow(QMainWindow):
         self.rad_ball_and_stick = QRadioButton("Ball-and-Stick")
         self.rad_ball_and_stick.setChecked(True)
         self.rad_space_filling = QRadioButton("Space-Filling (CPK)")
+        
         self.rad_ball_and_stick.clicked.connect(self.on_molecule_mode_changed)
         self.rad_space_filling.clicked.connect(self.on_molecule_mode_changed)
+        
         mode_layout.addWidget(self.rad_ball_and_stick)
         mode_layout.addWidget(self.rad_space_filling)
         mode_group.setLayout(mode_layout)
@@ -86,7 +103,7 @@ class MainWindow(QMainWindow):
         layout_mol.addStretch() 
         self.tabs.addTab(self.tab_molecule, "Molecules")
 
-    def _setup_bohr_tab(self):
+    def _setup_bohr_tab(self) -> None:
         """Constructs the UI elements for the Atomic Bohr Models tab."""
         self.tab_bohr = QWidget()
         layout_bohr = QVBoxLayout(self.tab_bohr)
@@ -96,15 +113,18 @@ class MainWindow(QMainWindow):
         search_layout = QHBoxLayout()
         self.txt_search = QLineEdit()
         self.txt_search.setPlaceholderText("e.g. Fe, Au, O...")
+        
         self.btn_search = QPushButton("Render")
         self.btn_search.clicked.connect(self.on_search_clicked)
         self.txt_search.returnPressed.connect(self.btn_search.click)
+        
         search_layout.addWidget(self.txt_search)
         search_layout.addWidget(self.btn_search)
         layout_bohr.addLayout(search_layout)
 
         spin_layout = QHBoxLayout()
         spin_layout.addWidget(QLabel("Atomic Number (Z):"))
+        
         self.spin_bohr = QSpinBox()
         self.spin_bohr.setRange(1, 118)
         self.spin_bohr.setValue(1) 
@@ -114,13 +134,14 @@ class MainWindow(QMainWindow):
         spin_layout.addWidget(self.spin_bohr)
         spin_layout.addWidget(self.lbl_bohr_name)
         spin_layout.addStretch()
+        
         self.spin_bohr.valueChanged.connect(self.on_bohr_changed)
         layout_bohr.addLayout(spin_layout)
         
         layout_bohr.addStretch() 
         self.tabs.addTab(self.tab_bohr, "Atoms (Bohr)")
 
-    def _setup_animation_panel(self, parent_layout):
+    def _setup_animation_panel(self, parent_layout: QVBoxLayout) -> None:
         """Constructs the global animation control panel."""
         anim_group = QGroupBox("Animation Settings")
         anim_v_layout = QVBoxLayout(anim_group)
@@ -132,10 +153,11 @@ class MainWindow(QMainWindow):
 
         speed_layout = QHBoxLayout()
         self.lbl_speed = QLabel(f"Speed: {config.DEFAULT_ANIMATION_SPEED:.1f}x")
-        self.sld_speed = QSlider(Qt.Horizontal)
+        self.sld_speed = QSlider(Qt.Orientation.Horizontal)
         self.sld_speed.setRange(1, 100)
         self.sld_speed.setValue(int(config.DEFAULT_ANIMATION_SPEED * 10))
         self.sld_speed.valueChanged.connect(self.on_speed_changed)
+        
         speed_layout.addWidget(self.lbl_speed)
         speed_layout.addWidget(self.sld_speed)
         anim_v_layout.addLayout(speed_layout)
@@ -146,7 +168,7 @@ class MainWindow(QMainWindow):
     # EVENT HANDLERS
     # ==========================================
 
-    def on_tab_changed(self, index):
+    def on_tab_changed(self, index: int) -> None:
         """Handles context switching between molecules and atoms."""
         if index == 0: 
             mol_key = self.combo_molecule.currentData()
@@ -158,30 +180,32 @@ class MainWindow(QMainWindow):
             symbol = EngineAPI.get_element_symbol(z_val)
             self.gl_widget.load_model(f"Bohr: {symbol}")
 
-    def on_molecule_changed(self, index):
+    def on_molecule_changed(self, index: int) -> None:
         """Loads the newly selected molecule and updates available vibrations."""
         molecule_key = self.combo_molecule.itemData(index)
         if molecule_key:
             self.gl_widget.load_model(molecule_key)
             self._update_vibration_combo()
 
-    def _update_vibration_combo(self):
+    def _update_vibration_combo(self) -> None:
         """Refreshes the vibration dropdown list for the active molecule."""
         vibs = self.gl_widget.get_current_vibrations()
         self.combo_vib.blockSignals(True) 
         self.combo_vib.clear()
         self.combo_vib.addItem("-- Default Mode --", userData=None)
+        
         for v_key, v_name in vibs.items():
             self.combo_vib.addItem(v_name, userData=v_key)
+            
         self.combo_vib.blockSignals(False)
 
-    def on_bohr_changed(self, value):
+    def on_bohr_changed(self, value: int) -> None:
         """Updates the Bohr model rendering based on the selected atomic number."""
         symbol = EngineAPI.get_element_symbol(value)
         self.lbl_bohr_name.setText(f"Symbol: {symbol}")
         self.gl_widget.load_model(f"Bohr: {symbol}")
 
-    def on_search_clicked(self):
+    def on_search_clicked(self) -> None:
         """Parses the search input to locate and render a specific element."""
         text = self.txt_search.text().strip().capitalize()
         if not text: 
@@ -194,24 +218,24 @@ class MainWindow(QMainWindow):
         else:
             QMessageBox.warning(self, "Search Error", f"Chemical element '{text}' not found.")
 
-    def on_speed_changed(self, value):
+    def on_speed_changed(self, value: int) -> None:
         """Adjusts the playback speed multiplier via the slider."""
         multiplier = value / 10.0
         self.lbl_speed.setText(f"Speed: {multiplier:.1f}x")
         self.gl_widget.set_animation_speed(multiplier)
 
-    def on_animation_toggled(self, state):
+    def on_animation_toggled(self, state: int) -> None:
         """Toggles the global simulation timer."""
-        self.gl_widget.toggle_animation(state == Qt.Checked.value)
+        self.gl_widget.toggle_animation(state == Qt.CheckState.Checked.value)
         
-    def on_molecule_mode_changed(self):
+    def on_molecule_mode_changed(self) -> None:
         """Delegates display mode switching (Ball-and-stick vs CPK)."""
         if self.rad_space_filling.isChecked():
             self.gl_widget.set_molecule_display_mode("space_filling")
         else:
             self.gl_widget.set_molecule_display_mode("ball_and_stick")
             
-    def on_vibration_changed(self, index):
+    def on_vibration_changed(self, index: int) -> None:
         """Triggers the selected IR vibration mode."""
         vib_key = self.combo_vib.itemData(index)
         self.gl_widget.set_vibration_mode(vib_key)

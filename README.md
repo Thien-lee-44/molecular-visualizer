@@ -80,35 +80,36 @@ python run.py
 molecular_visualizer/
 │
 ├── run.py                      # Standardized application entry point
-├── main.py                     # Backward-compatible entry wrapper
-│
 ├── assets/                     # Raw physical assets & Resources
 │   ├── models/                 # Base OBJ primitives (sphere, cylinder)
 │   └── shaders/                # GLSL vertex and fragment shaders
 │
-├── src/
-│   ├── app/                    # Bootstrap and shared runtime configuration
-│   │   ├── main.py             # Qt/OpenGL startup flow
-│   │   └── config.py           # Centralized constants and paths
-│   │
-│   ├── engine/                 # ================= CORE RUNTIME ENGINE =================
-│   │   ├── api.py              # Dynamic Facade decoupling the UI from the Engine
-│   │   ├── data/               # Chemical Logic & Database
-│   │   │   ├── chemical_data.py    # Mesh wrappers for Atoms, Bonds, and Orbits
-│   │   │   ├── periodic_table.py   # Aufbau principle logic and CPK color mapping
-│   │   │   ├── molecule_factory.py # JSON parser and dynamic hierarchy builder
-│   │   │   └── molecules.json      # Extensible database of molecular structures & vibrations
-│   │   │
-│   │   └── graphics/           # Low-level Rendering & Math
-│   │       ├── camera.py       # Orbital View/Projection matrix math
-│   │       ├── model_loader.py # Numpy-based OBJ parser and C-type buffer caching
-│   │       ├── scene_graph.py  # Transform nodes and Matrix propagation
-│   │       ├── shader.py       # GLSL Compilation and Uniform injection
-│   │       └── renderer.py     # OpenGL State Machine and Draw calls
-│   │
-│   └── ui/                     # ================= PYSIDE6 AUTHORING GUI =================
-│       ├── main_window.py      # Main Window assembly and Control Panel routing
-│       └── gl_widget.py        # 3D OpenGL Canvas and Input Controllers
+└── src/
+    ├── app/                    # Bootstrap and shared runtime configuration
+    │   ├── __init__.py
+    │   ├── config.py           # Centralized constants and paths
+    │   └── main.py             # Qt/OpenGL startup flow
+    │
+    ├── engine/                 # ================= CORE RUNTIME ENGINE =================
+    │   ├── engine.py           # Dynamic Facade decoupling the UI from the Engine
+    │   ├── data/               # Chemical Logic & Database
+    │   │   ├── chemical_data.py    # Mesh wrappers for Atoms, Bonds, and Orbits
+    │   │   ├── elements.json       # Periodic table properties & electron configs
+    │   │   ├── molecule_factory.py # JSON parser and dynamic hierarchy builder
+    │   │   ├── molecules.json      # Extensible database of molecular structures & vibrations
+    │   │   └── periodic_table.py   # Aufbau principle logic and CPK color mapping
+    │   │
+    │   └── graphics/           # Low-level Rendering & Math
+    │       ├── camera.py       # Orbital View/Projection matrix math
+    │       ├── model_loader.py # Numpy-based OBJ parser and caching
+    │       ├── renderer.py     # OpenGL State Machine and Draw calls
+    │       ├── scene_graph.py  # Transform nodes and Matrix propagation
+    │       └── shader.py       # GLSL Compilation and Uniform injection
+    │
+    └── ui/                     # ================= PYSIDE6 AUTHORING GUI =================
+        ├── __init__.py
+        ├── gl_widget.py        # 3D OpenGL Canvas and Input Controllers
+        └── main_window.py      # Main Window assembly and Control Panel routing
 ```
 ## Contributing
 Contributions, issues, and feature requests are welcome. Feel free to check the issues page to get involved.

@@ -1,13 +1,22 @@
-import numpy as np
+"""
+Model loading and caching utility.
+Handles parsing of 3D geometry data and procedural mesh generation.
+"""
+
 import math
+from typing import Dict, Tuple, List
+import numpy as np
+
 from src.app import config
+
 
 class ModelLoader:
     """Utility class to load and cache 3D geometry data."""
-    _cache = {}
+    
+    _cache: Dict[str, Tuple[np.ndarray, np.ndarray]] = {}
 
     @staticmethod
-    def get_model_data(model_name):
+    def get_model_data(model_name: str) -> Tuple[np.ndarray, np.ndarray]:
         """
         Reads an OBJ file and returns a tuple of (vertices, indices).
         Results are cached to optimize subsequent instantiations.
@@ -20,11 +29,11 @@ class ModelLoader:
         if not filepath.exists():
             raise FileNotFoundError(f"Model not found: {filepath}")
         
-        raw_vertices = []
-        raw_normals = []
-        unique_vertices = {}
-        final_vertices = []
-        indices = []
+        raw_vertices: List[List[float]] = []
+        raw_normals: List[List[float]] = []
+        unique_vertices: Dict[str, int] = {}
+        final_vertices: List[float] = []
+        indices: List[int] = []
         current_index = 0
 
         with filepath.open("r", encoding="utf-8") as f:
@@ -39,7 +48,8 @@ class ModelLoader:
                     raw_normals.append([float(x) for x in parts[1:4]])
                 elif parts[0] == 'f':
                     face_data = parts[1:]
-                    face_indices = []
+                    face_indices: List[int] = []
+                    
                     for vertex_str in face_data:
                         if vertex_str not in unique_vertices:
                             unique_vertices[vertex_str] = current_index
@@ -61,6 +71,7 @@ class ModelLoader:
                             
                         face_indices.append(unique_vertices[vertex_str])
                     
+                    # Triangulate polygon faces
                     for i in range(1, len(face_indices) - 1):
                         indices.extend([face_indices[0], face_indices[i], face_indices[i+1]])
 
@@ -71,13 +82,14 @@ class ModelLoader:
         return vertices_np, indices_np
 
     @staticmethod
-    def create_circle(radius=1.0, segments=64):
+    def create_circle(radius: float = 1.0, segments: int = 64) -> Tuple[np.ndarray, np.ndarray]:
         """
         Generates 2D circle vertices and indices.
         Primarily used for rendering atomic electron orbits.
         """
-        vertices = []
-        indices = []
+        vertices: List[float] = []
+        indices: List[int] = []
+        
         for i in range(segments):
             theta = i * 2 * math.pi / segments
             x = radius * math.cos(theta)
@@ -85,4 +97,5 @@ class ModelLoader:
             z = 0.0
             vertices.extend([x, y, z, 0.0, 0.0, 1.0])
             indices.append(i)
+            
         return np.array(vertices, dtype=np.float32), np.array(indices, dtype=np.uint32)

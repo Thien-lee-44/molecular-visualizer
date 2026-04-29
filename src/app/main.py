@@ -1,5 +1,6 @@
 """
 BTL1-3 application bootstrap.
+Handles Qt application initialization and main window execution.
 """
 import sys
 from PySide6.QtGui import QSurfaceFormat
@@ -10,15 +11,20 @@ from src.app import config
 
 
 def run_app() -> None:
-    """Configure Qt/OpenGL defaults and start the main window."""
+    """
+    Configures Qt/OpenGL defaults, initializes the application loop, 
+    and displays the main window.
+    """
+    # Setup OpenGL format based on configuration
     fmt = QSurfaceFormat()
     fmt.setSamples(config.MSAA_SAMPLES)
     QSurfaceFormat.setDefaultFormat(fmt)
 
+    # Initialize QApplication
     app = QApplication(sys.argv)
     app.setStyle(config.UI_STYLE)
 
+    # Boot main interface
     window = MainWindow()
     window.show()
     sys.exit(app.exec())
-

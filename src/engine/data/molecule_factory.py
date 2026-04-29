@@ -1,53 +1,66 @@
+"""
+Dynamic molecular system controllers and factory builders.
+Processes JSON structural data to assemble interactive molecule graphs.
+"""
+
 import json
 import math
-import os
+from pathlib import Path
+from typing import List, Tuple, Dict, Any, Optional
+
 import glm  
+
 from src.engine.graphics.scene_graph import Transform
 from src.engine.data.chemical_data import Atom, Bond
 from src.engine.data.periodic_table import get_chemical_properties
 from src.app import config
 
+DATA_DIR: Path = Path(__file__).resolve().parent
+JSON_PATH: Path = DATA_DIR / "molecules.json"
+
 class DynamicMolecule(Transform):
     """
-    Controller for molecular scene graphs.
-    Manages hierarchical updates and sinusoidal Infrared (IR) vibrations.
+    Controller node for molecular scene graphs.
+    Handles hierarchical matrix updates and sinusoidal Infrared (IR) vibration simulations.
     """
-    def __init__(self, name):
+    def __init__(self, name: str):
         super().__init__(name)
-        self.time_elapsed = 0.0
-        self.idle_yaw = 0.0
-        self.atoms = {}
-        self.bonds = []
-        self.vibrations = {}  
-        self.current_vib = None
-        self._rotation_quat = glm.quat(1.0, 0.0, 0.0, 0.0)
-        self._target_rotation_quat = glm.quat(1.0, 0.0, 0.0, 0.0)
+        self.time_elapsed: float = 0.0
+        self.idle_yaw: float = 0.0
+        self.atoms: Dict[str, Tuple[Atom, glm.vec3]] = {}
+        self.bonds: List[Tuple[Bond, str, str]] = []
+        self.vibrations: Dict[str, Any] = {}  
+        self.current_vib: Optional[str] = None
+        
+        self._rotation_quat: glm.quat = glm.quat(1.0, 0.0, 0.0, 0.0)
+        self._target_rotation_quat: glm.quat = glm.quat(1.0, 0.0, 0.0, 0.0)
 
     @staticmethod
-    def _exp_blend_factor(delta_time, blend_rate):
-        """Convert delta time into a frame-rate independent smoothing factor."""
+    def _exp_blend_factor(delta_time: float, blend_rate: float) -> float:
+        """Calculates a frame-rate independent smoothing factor."""
         if delta_time <= 0.0:
             return 0.0
         return 1.0 - math.exp(-blend_rate * delta_time)
 
-    def _apply_root_rotation(self):
-        """Build the root local matrix from a quaternion to avoid Euler artifacts."""
+    def _apply_root_rotation(self) -> None:
+        """Reconstructs the root local matrix from its quaternion to prevent Euler flipping."""
         t_mat = glm.translate(glm.mat4(1.0), self.position)
         r_mat = glm.mat4_cast(self._rotation_quat)
         s_mat = glm.scale(glm.mat4(1.0), self.scale_vec)
         self.local_matrix = t_mat * r_mat * s_mat
 
-    def set_vibration(self, vib_key):
-        """Activate a vibration mode and let orientation transition smoothly."""
+    def set_vibration(self, vib_key: Optional[str]) -> None:
+        """Activates a specific vibration mode and resets the animation timer."""
         self.current_vib = vib_key
         self.time_elapsed = 0.0 
         self.update(0.0)
 
-    def update(self, delta_time=0.0):
-        """Advances the simulation state and recalculates dynamic bonds."""
+    def update(self, delta_time: float = 0.0) -> None:
+        """Advances the kinetic simulation and recalculates bond matrices dynamically."""
         if delta_time > 0: 
             self.time_elapsed += delta_time
 
+        # Handle target rotation state based on active vibration
         if self.current_vib is None:
             self.idle_yaw += delta_time * config.IDLE_ROTATION_SPEED
             self.idle_yaw = math.fmod(self.idle_yaw, 2.0 * math.pi)
@@ -55,6 +68,7 @@ class DynamicMolecule(Transform):
         else:
             self._target_rotation_quat = glm.quat(1.0, 0.0, 0.0, 0.0)
 
+        # Smoothly interpolate root rotation
         rot_alpha = self._exp_blend_factor(delta_time, config.ROOT_ROTATION_BLEND_RATE)
         if rot_alpha > 0.0:
             self._rotation_quat = glm.normalize(
@@ -62,6 +76,7 @@ class DynamicMolecule(Transform):
             )
         self._apply_root_rotation()
 
+        # Apply localized atomic vibrations
         vib_data = self.vibrations.get(self.current_vib)
         oscillation = math.sin(self.time_elapsed * config.VIBRATION_ANGULAR_SPEED)
         pos_alpha = self._exp_blend_factor(delta_time, config.ATOM_POSITION_BLEND_RATE)
@@ -73,17 +88,16 @@ class DynamicMolecule(Transform):
                 offset = glm.vec3(v[0], v[1], v[2]) * (oscillation * config.VIBRATION_AMPLITUDE)
                 target_pos = base_pos + offset
 
-            if pos_alpha > 0.0:
-                blended_pos = glm.mix(node.position, target_pos, pos_alpha)
-            else:
-                blended_pos = target_pos
+            blended_pos = glm.mix(node.position, target_pos, pos_alpha) if pos_alpha > 0.0 else target_pos
             node.set_position(blended_pos.x, blended_pos.y, blended_pos.z)
 
+        # Recalculate bond geometry transforms
         for bond_node, src_id, tgt_id in self.bonds:
             p1 = self.atoms[src_id][0].position
             p2 = self.atoms[tgt_id][0].position
             v_bond = p2 - p1
             length = glm.length(v_bond)
+            
             if length > 0.001:
                 bond_node.local_matrix = MoleculeFactory._calculate_bond_matrix(
                     (p1 + p2) * 0.5, 
@@ -96,25 +110,22 @@ class DynamicMolecule(Transform):
 
 
 class MoleculeFactory:
-    """Factory utility to instantiate molecular scene graphs from JSON databases."""
-    DISTANCE_SCALE = config.MOLECULE_DISTANCE_SCALE
+    """Factory utility to parse JSON databases and yield structural node hierarchies."""
     
     @staticmethod
-    def get_available_molecules():
-        """Reads the database and returns a list of available molecules."""
-        path = os.path.join(os.path.dirname(__file__), "molecules.json")
+    def get_available_molecules() -> List[Tuple[str, str]]:
+        """Reads the underlying database and returns a mapping of available molecule keys to their display names."""
         try:
-            with open(path, 'r', encoding='utf-8') as f:
+            with open(JSON_PATH, 'r', encoding='utf-8') as f:
                 data = json.load(f)
             return [(key, val.get("name", key)) for key, val in data.items()]
         except (FileNotFoundError, json.JSONDecodeError, TypeError, ValueError): 
             return []
     
     @staticmethod
-    def create_from_json(molecule_key, mode="ball_and_stick"):
-        """Constructs a complete DynamicMolecule hierarchy based on JSON parameters."""
-        path = os.path.join(os.path.dirname(__file__), "molecules.json")
-        with open(path, 'r', encoding='utf-8') as f: 
+    def create_from_json(molecule_key: str, mode: str = "ball_and_stick") -> DynamicMolecule:
+        """Constructs a fully rigged DynamicMolecule hierarchy from JSON parameters."""
+        with open(JSON_PATH, 'r', encoding='utf-8') as f: 
             data = json.load(f)[molecule_key]
             
         root_node = DynamicMolecule(f"Root_{molecule_key}")
@@ -124,7 +135,7 @@ class MoleculeFactory:
         
         for atom_data in data["atoms"]:
             pos = atom_data["position"]
-            scaled_pos = glm.vec3(pos[0], pos[1], pos[2]) * MoleculeFactory.DISTANCE_SCALE
+            scaled_pos = glm.vec3(pos[0], pos[1], pos[2]) * config.MOLECULE_DISTANCE_SCALE
             
             props = get_chemical_properties(atom_data["element"])
             radius = props["radius_vdw"] if mode == "space_filling" else props["radius_ball"]
@@ -161,8 +172,8 @@ class MoleculeFactory:
         return root_node
 
     @staticmethod
-    def _calculate_bond_matrix(center, direction, length, radius=config.BOND_RADIUS):
-        """Calculates the transformation matrix to align a Z-oriented cylinder between two atoms."""
+    def _calculate_bond_matrix(center: glm.vec3, direction: glm.vec3, length: float, radius: float) -> glm.mat4:
+        """Computes the affine transformation matrix to correctly orient a cylindrical bond between two coordinates."""
         center_vec = glm.vec3(*center)
         z_axis = glm.normalize(glm.vec3(*direction))
 
@@ -171,12 +182,13 @@ class MoleculeFactory:
         x_axis = glm.normalize(glm.cross(up, z_axis))
         y_axis = glm.normalize(glm.cross(z_axis, x_axis))
 
-        R = glm.mat4(
+        r_mat = glm.mat4(
             glm.vec4(x_axis, 0.0),
             glm.vec4(y_axis, 0.0),
             glm.vec4(z_axis, 0.0),
             glm.vec4(0.0, 0.0, 0.0, 1.0)
         )
-        S = glm.scale(glm.mat4(1.0), glm.vec3(radius, radius, length))
-        T = glm.translate(glm.mat4(1.0), center_vec)
-        return T * R * S
+        s_mat = glm.scale(glm.mat4(1.0), glm.vec3(radius, radius, length))
+        t_mat = glm.translate(glm.mat4(1.0), center_vec)
+        
+        return t_mat * r_mat * s_mat
