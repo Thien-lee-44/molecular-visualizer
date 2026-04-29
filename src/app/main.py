@@ -1,5 +1,4 @@
 """
-BTL1-3 application bootstrap.
 Handles Qt application initialization and main window execution.
 """
 import sys

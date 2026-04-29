@@ -1,5 +1,4 @@
 """
-Centralized configuration for BTL1-3.
 Keeps runtime paths and shared constants in one location to avoid hardcoding.
 """
 

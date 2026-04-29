@@ -1,6 +1,5 @@
 """
 Application entry point.
-Aligns BTL1-3 bootstrap behavior with BTL1-1 and BTL1-2.
 Execute this file to run the application.
 """
 import os
